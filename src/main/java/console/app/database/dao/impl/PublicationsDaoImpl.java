@@ -1,24 +1,18 @@
 package console.app.database.dao.impl;
 
-import console.app.database.dao.PublicationsDao;
+import console.app.database.dao.AbstractDao;
 import console.app.database.entity.PublicationsEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
-
-import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class PublicationsDaoImpl implements PublicationsDao {
 
-    private JdbcTemplate db;
+public class PublicationsDaoImpl extends AbstractDao<PublicationsEntity> {
 
-    public PublicationsDaoImpl(DataSource source) {
-        this.db = new JdbcTemplate(source);
+    public PublicationsDaoImpl() {
+        super();
     }
 
-
-    @Override
     public List<PublicationsEntity> getList() {
         try {
             return db.query("SELECT * FROM Publications",
@@ -43,34 +37,30 @@ public class PublicationsDaoImpl implements PublicationsDao {
     }
 
     @Override
-    public void insert(PublicationsEntity pub) {
+    public int insert(PublicationsEntity pub) {
 
         String sql = "INSERT INTO Publications (" +
-                "publication_type, year, month, count_pages, publishing_house, " +
-                "name, author, title, genre, summary, article_list, description)" +
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+                "publication_type, year, month, count_pages, publishing_house, name)" +
+                "VALUES (?,?,?,?,?,?)";
 
         try {
 
-            db.update(
+            return insertForKeyId(
                     sql,
                     pub.getPublication_type(),
                     pub.getYear(),
                     pub.getMonth(),
                     pub.getCount_pages(),
                     pub.getPublishing_house(),
-                    pub.getName(),
-                    pub.getAuthor(),
-                    pub.getTitle(),
-                    pub.getGenre(),
-                    pub.getSummary(),
-                    pub.getArticle_list(),
-                    pub.getDescription()
+                    pub.getName()
+
             );
 
         } catch (Exception e){
             e.printStackTrace();
         }
+
+        return 0;
     }
 
     @Override
@@ -82,7 +72,7 @@ public class PublicationsDaoImpl implements PublicationsDao {
         }
     }
 
-    @Override
+
     public String publicationType(int id) {
         try {
             return db.queryForMap("SELECT name FROM publication_type WHERE id = ?", id)
@@ -105,12 +95,7 @@ public class PublicationsDaoImpl implements PublicationsDao {
         publication.setCount_pages(rs.getInt("count_pages"));
         publication.setPublishing_house(rs.getString("publishing_house"));
         publication.setName(rs.getString("name"));
-        publication.setAuthor(rs.getString("author"));
-        publication.setTitle(rs.getString("title"));
-        publication.setGenre(rs.getString("genre"));
-        publication.setSummary(rs.getString("SUMMARY"));
-        publication.setArticle_list(rs.getString("article_list"));
-        publication.setDescription(rs.getString("description"));
+
 
         return publication;
     }

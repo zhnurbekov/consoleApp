@@ -1,17 +1,12 @@
 package console.app.database;
 
-import console.app.database.dao.PublicationsDao;
-import console.app.database.dao.impl.PublicationsDaoImpl;
 import org.h2.tools.RunScript;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
 import java.io.*;
-import java.net.URL;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Properties;
 
 public class DaoFactory {
 
@@ -54,7 +49,10 @@ public class DaoFactory {
         }
     }
 
-    public PublicationsDao publicationsDao(){return new PublicationsDaoImpl(source);}
+    public DataSource getDataSource() {
+        return source;
+    }
+
 
     private static String getScriptSql(){
         return ";             \n" +

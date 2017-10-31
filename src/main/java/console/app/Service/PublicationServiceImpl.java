@@ -1,7 +1,13 @@
 package console.app.Service;
 
-import console.app.database.DaoFactory;
-import console.app.database.dao.PublicationsDao;
+import console.app.database.dao.AbstractDao;
+import console.app.database.dao.impl.BookDaoImpl;
+import console.app.database.dao.impl.BrochureDaoImpl;
+import console.app.database.dao.impl.JournalDaoImpl;
+import console.app.database.dao.impl.PublicationsDaoImpl;
+import console.app.database.entity.BookEntity;
+import console.app.database.entity.BrochureEntity;
+import console.app.database.entity.JournalEntity;
 import console.app.database.entity.PublicationsEntity;
 
 import java.io.IOException;
@@ -9,9 +15,6 @@ import java.util.*;
 
 public class PublicationServiceImpl implements PublicationService {
 
-    DaoFactory daoFactory = DaoFactory.getInstance();
-
-    PublicationsDao publicationsDao = daoFactory.publicationsDao();
 
     @Override
     public String getCommand() {
@@ -52,6 +55,8 @@ public class PublicationServiceImpl implements PublicationService {
         System.out.printf("%-5s%-10s%-20s%-7s%-11s%-15s%n",
                 "| # ", "| Тип", "| Наименование", "| Год ", "|Кол-во стр", "| Издательство");
 
+        PublicationsDaoImpl publicationsDao = new PublicationsDaoImpl();
+
         for (PublicationsEntity list : publicationsDao.getList()) {
 
             String type = publicationsDao.publicationType(list.getPublication_type());
@@ -76,14 +81,19 @@ public class PublicationServiceImpl implements PublicationService {
 
         try {
 
-            PublicationsEntity pub = publicationsDao.get(Integer.parseInt(inputText));
+            AbstractDao abstractDao = new PublicationsDaoImpl();
+            int publicationId = Integer.parseInt(inputText);
+            PublicationsEntity pub = (PublicationsEntity) abstractDao.get(publicationId);
 
             if (pub.getPublication_type() == 1) {
+
+                abstractDao = new BookDaoImpl();
+                BookEntity book = (BookEntity) abstractDao.get(publicationId);
 
                 System.out.println("+-----------------------------+--------------------------------------+");
                 System.out.printf("%-30s%-40s%n", "| Идентификатор ", "| " + pub.getId());
                 System.out.println("+-----------------------------+--------------------------------------+");
-                System.out.printf("%-30s%-40s%n", "| Автор ", "| " + lineBreak(pub.getAuthor()));
+                System.out.printf("%-30s%-40s%n", "| Автор ", "| " + lineBreak(book.getAuthor()));
                 System.out.println("+-----------------------------+--------------------------------------+");
                 System.out.printf("%-30s%-40s%n", "| Наименование книги ", "| " + lineBreak(pub.getName()));
                 System.out.println("+-----------------------------+--------------------------------------+");
@@ -93,14 +103,16 @@ public class PublicationServiceImpl implements PublicationService {
                 System.out.println("+-----------------------------+--------------------------------------+");
                 System.out.printf("%-30s%-40s%n", "| Издательство ", "| " + lineBreak(pub.getPublishing_house()));
                 System.out.println("+-----------------------------+--------------------------------------+");
-                System.out.printf("%-30s%-40s%n", "| Жанр книги ", "| " + lineBreak(pub.getGenre()));
+                System.out.printf("%-30s%-40s%n", "| Жанр книги ", "| " + lineBreak(book.getGenre()));
                 System.out.println("+-----------------------------+--------------------------------------+");
-                System.out.printf("%-30s%-40s%n", "| Краткое содержание", "| " + lineBreak(pub.getSummary()));
+                System.out.printf("%-30s%-40s%n", "| Краткое содержание", "| " + lineBreak(book.getSummary()));
                 System.out.println("+-----------------------------+--------------------------------------+");
 
 
             } else if (pub.getPublication_type() == 2) {
 
+                abstractDao = new JournalDaoImpl();
+                JournalEntity journal = (JournalEntity) abstractDao.get(publicationId);
 
                 System.out.println("+-----------------------------+--------------------------------------+");
                 System.out.printf("%-30s%-40s%n", "| Наименование журнала ", "| " + lineBreak(pub.getName()));
@@ -113,11 +125,14 @@ public class PublicationServiceImpl implements PublicationService {
                 System.out.println("+-----------------------------+--------------------------------------+");
                 System.out.printf("%-30s%-40s%n", "| Издательство ", "| " + lineBreak(pub.getPublishing_house()));
                 System.out.println("+-----------------------------+--------------------------------------+");
-                System.out.printf("%-30s%-40s%n", "| Список статей ", "| " + lineBreak(pub.getArticle_list()));
+                System.out.printf("%-30s%-40s%n", "| Список статей ", "| " + lineBreak(journal.getArticle_list()));
                 System.out.println("+-----------------------------+--------------------------------------+");
 
 
             } else {
+
+                abstractDao = new BrochureDaoImpl();
+                BrochureEntity brochure = (BrochureEntity) abstractDao.get(publicationId);
 
                 System.out.println("+-----------------------------+--------------------------------------+");
                 System.out.printf("%-30s%-40s%n", "| Наименование брошюры ", "| " + lineBreak(pub.getName()));
@@ -128,7 +143,7 @@ public class PublicationServiceImpl implements PublicationService {
                 System.out.println("+-----------------------------+--------------------------------------+");
                 System.out.printf("%-30s%-40s%n", "| Издательство ", "| " + lineBreak(pub.getPublishing_house()));
                 System.out.println("+-----------------------------+--------------------------------------+");
-                System.out.printf("%-30s%-40s%n", "| Краткое описание брошюры ", "| " + lineBreak(pub.getDescription()));
+                System.out.printf("%-30s%-40s%n", "| Краткое описание брошюры ", "| " + lineBreak(brochure.getDescription()));
                 System.out.println("+-----------------------------+--------------------------------------+");
 
             }
@@ -153,44 +168,71 @@ public class PublicationServiceImpl implements PublicationService {
         int type = Integer.parseInt(inputText);
 
         if (type == 1 || type == 2 || type == 3) {
+
             PublicationsEntity pub = new PublicationsEntity();
+            PublicationsDaoImpl publicationsDao = new PublicationsDaoImpl();
+
             System.out.println("Введите название ");
             pub.setName(in.nextLine());
             pub.setYear(getInputInteger("Введите год издательства"));
+            pub.setPublication_type(type);
+
             if (type == 1) {
-                System.out.println("Введите автора книги");
-                pub.setAuthor(in.nextLine());
                 pub.setCount_pages(getInputInteger("Введите количество страниц"));
-                System.out.println("Введите жанр книги");
-                pub.setGenre(in.nextLine());
-                System.out.println("Введите краткое содержание");
-                pub.setSummary(in.nextLine());
-                pub.setPublication_type(1);
-
-
             } else if (type == 2) {
                 pub.setMonth(getInputInteger("Введите месяц издательства в формате '05 , 06 , 07'"));
                 pub.setCount_pages(getInputInteger("Введите количество страниц"));
-                System.out.println("Введите список статей опубликованный в данном журнале");
-                pub.setArticle_list(in.nextLine());
-                pub.setPublication_type(2);
-
             } else {
                 pub.setMonth(getInputInteger("Введите месяц издательства в формате '05 , 06 , 07'"));
-                System.out.println("Введите краткое описание");
-                pub.setDescription(in.nextLine());
-                pub.setPublication_type(3);
-
             }
+
             System.out.println("Введите название издательство");
             pub.setPublishing_house(in.nextLine());
-            publicationsDao.insert(pub);
+            int publicationId = publicationsDao.insert(pub);
+
+
+            AbstractDao abstractDao;
+            switch (type){
+                case 1:
+                    abstractDao = new BookDaoImpl();
+                    BookEntity bookEntity = new BookEntity();
+                    System.out.println("Введите автора книги");
+                    bookEntity.setAuthor(in.nextLine());
+                    System.out.println("Введите жанр книги");
+                    bookEntity.setGenre(in.nextLine());
+                    System.out.println("Введите краткое содержание");
+                    bookEntity.setSummary(in.nextLine());
+                    bookEntity.setId_publication(publicationId);
+                    abstractDao.insert(bookEntity);
+                    break;
+                case 2:
+                    abstractDao = new JournalDaoImpl();
+                    JournalEntity journalEntity = new JournalEntity();
+                    System.out.println("Введите список статей опубликованный в данном журнале");
+                    journalEntity.setArticle_list(in.nextLine());
+                    journalEntity.setId_publications(publicationId);
+                    abstractDao.insert(journalEntity);
+                    break;
+                case 3:
+                    abstractDao = new BrochureDaoImpl();
+                    BrochureEntity brochureEntity = new BrochureEntity();
+                    System.out.println("Введите краткое описание");
+                    brochureEntity.setDescription(in.nextLine());
+                    brochureEntity.setId_publications(publicationId);
+                    abstractDao.insert(brochureEntity);
+                    break;
+            }
+
             clearScreen();
             System.out.println("Издательство успешно добавлено");
+
         } else {
+
             System.out.println("Данные которые вы ввели не правильно");
             System.out.println("Введите заново");
+
         }
+
         return inputText;
     }
 
@@ -203,7 +245,20 @@ public class PublicationServiceImpl implements PublicationService {
         clearScreen();
 
         try {
-            publicationsDao.delete(Integer.parseInt(inputText));
+
+            int publicationId = Integer.parseInt(inputText);
+            AbstractDao abstractDao = new PublicationsDaoImpl();
+            PublicationsEntity pub = (PublicationsEntity) abstractDao.get(publicationId);
+
+            switch (pub.getPublication_type()){
+                case 1: abstractDao = new BookDaoImpl(); break;
+                case 2: abstractDao = new JournalDaoImpl(); break;
+                case 3: abstractDao = new BrochureDaoImpl(); break;
+            }
+
+            abstractDao.delete(publicationId);
+            abstractDao = new PublicationsDaoImpl();
+            abstractDao.delete(publicationId);
             System.out.println("Издательства успешно удалено");
 
         } catch (Exception e) {
